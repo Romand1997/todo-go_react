@@ -1,35 +1,74 @@
 package main
 
-import "fmt"
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
-// App struct
-type App struct {
-	tasks []string
+type Task struct {
+	ID        int
+	Title     string
+	Completed bool
 }
 
-// NewApp создаёт новый экземпляр App
+type App struct {
+}
+
 func NewApp() *App {
-	return &App{
-		tasks: []string{}, // пустой список задач
-	}
+	return &App{}
 }
 
 func (a *App) startup(ctx context.Context) {
-    // Этот метод вызывается при старте приложения
-    // Можно оставить пустым
+	err := InitDB()
+	if err != nil {
+		fmt.Println("Ошибка подключения к БД:", err)
+	}
 }
 
-// Greet возвращает приветствие
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
+// func (a *App) Greet(name string) string {
+// 	return fmt.Sprintf("Hello %s, It's show time!", name)
+// }
+
+func (a *App) GetTasks() []Task {
+	rows, err := db.Query("SELECT id, title, completed FROM tasks")
+	if err != nil {
+		fmt.Println("Ошибка при получении задач:", err)
+		return []Task{}
+	}
+	defer rows.Close()
+
+	var tasks []Task
+	for rows.Next() {
+		var t Task
+		if err := rows.Scan(&t.ID, &t.Title, &t.Completed); err != nil {
+			fmt.Println("Ошибка при чтении задачи:", err)
+			continue
+		}
+		tasks = append(tasks, t)
+	}
+	return tasks
 }
 
-// GetTasks возвращает список всех задач
-func (a *App) GetTasks() []string {
-	return a.tasks
+func (a *App) AddTask(title string) {
+	if title == "" {
+		return
+	}
+	_, err := db.Exec("INSERT INTO tasks (title) VALUES (?)", title)
+	if err != nil {
+		fmt.Println("Ошибка при добавлении задачи:", err)
+	}
 }
 
-func (a *App) AddTask(task string) {
-	a.tasks = append(a.tasks, task)
+func (a *App) ToggleTask(id int) {
+	_, err := db.Exec("UPDATE tasks SET completed = NOT completed WHERE id = ?", id)
+	if err != nil {
+		fmt.Println("Ошибка при смене статуса:", err)
+	}
+}
+
+func (a *App) DeleteTask(id int) {
+	_, err := db.Exec("DELETE FROM tasks WHERE id = ?", id)
+	if err != nil {
+		fmt.Println("Ошибка при удалении задачи:", err)
+	}
 }

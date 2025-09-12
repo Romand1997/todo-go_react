@@ -1,57 +1,74 @@
-import { useState } from 'react'
-import { Greet, GetTasks, AddTask } from '../wailsjs/go/main/App'
+import { useState, useEffect } from 'react'
+import { GetTasks, AddTask, DeleteTask, ToggleTask } from '../wailsjs/go/main/App'
 
 function App() {
-  const [name, setName] = useState('')
-  const [result, setResult] = useState('')
-  const [tasks, setTasks] = useState([])
   const [newTask, setNewTask] = useState('')
-
-  const greet = () => {
-    Greet(name).then(setResult)
-  }
+  const [tasks, setTasks] = useState([])
 
   const loadTasks = () => {
-    GetTasks().then(setTasks)
+    GetTasks().then(data => {
+    console.log('Получены задачи:', data)
+    setTasks(data || [])
+  })   
   }
 
   const addTask = () => {
-    if (newTask.trim() === '') return
+    if (!newTask.trim()) return
     AddTask(newTask).then(() => {
       setNewTask('')
-    //   loadTasks() // обновляем список после добавления
+      loadTasks()
     })
   }
+
+  const deleteTask = (id) => {
+    DeleteTask(id).then(loadTasks)
+  }
+
+  const toggleTask = (id) => {
+    ToggleTask(id).then(loadTasks)
+  }
+
+  // 👇 Автозагрузка задач при старте
+  useEffect(() => {
+    loadTasks()
+  }, [])
 
   return (
     <div>
       <h1>To-Do</h1>
 
       <input
-        value={name}
-        onChange={e => setName(e.target.value)}
-        placeholder="Введите имя"
-      />
-      <button onClick={greet}>Greet</button>
-      <p>{result}</p>
-
-      <hr />
-
-      <input
         value={newTask}
         onChange={e => setNewTask(e.target.value)}
-        placeholder="Новая задача"
+        placeholder="Введите задачу"
       />
-      <button onClick={addTask}>Добавить задачу</button>
+      <button onClick={addTask}>Добавить</button>
 
-      <hr />
+      {tasks.length > 0 ? (
+        <ul>
+          {tasks.map((t) => (
+            <li key={t.ID}>
+              <span
+                style={{
+                  textDecoration: t.Completed ? 'line-through' : 'none',
+                  marginRight: '10px'
+                }}
+              >
+                {t.Title}
+              </span>
 
-      <button onClick={loadTasks}>Загрузить задачи</button>
-      <ul>
-        {tasks.map((t, i) => (
-          <li key={i}>{t}</li>
-        ))}
-      </ul>
+              <span style={{ marginRight: '10px' }}>
+                {t.Completed ? '✅' : '❌'}
+              </span>
+
+              <button onClick={() => toggleTask(t.ID)}>Изменить статус</button>
+              <button onClick={() => deleteTask(t.ID)}>Удалить</button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>Пока нет задач</p>
+      )}
     </div>
   )
 }
