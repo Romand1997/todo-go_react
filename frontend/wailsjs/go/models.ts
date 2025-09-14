@@ -6,6 +6,7 @@ export namespace main {
 	    Completed: boolean;
 	    // Go type: time
 	    Deadline: any;
+	    Priority: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Task(source);
@@ -17,6 +18,7 @@ export namespace main {
 	        this.Title = source["Title"];
 	        this.Completed = source["Completed"];
 	        this.Deadline = this.convertValues(source["Deadline"], null);
+	        this.Priority = source["Priority"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
